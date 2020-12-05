@@ -1,0 +1,219 @@
+<html>
+
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" type="text/css">
+
+<head>
+</head>
+
+<body class="back">
+
+<div id="focus" class="focusbox">
+<canvas id="canvas"></canvas>
+<script>
+    // The attributes of the player.
+    var player = {
+        x: 300,
+        y: 200,
+        x_v: 0,
+        y_v: 0,
+        theta : 0,
+        omega : 0,
+        height: 20,
+        width: 20
+    };
+    // The status of the arrow keys
+    var keys = {
+        right: false,
+        left: false,
+        up: false,
+        down: false,
+        comma: false,
+        period: false,
+    };
+    // The friction and gravity to show realistic movements    
+    var friction = 0.93;
+    // The number of platforms
+    var num = 8;
+    // The platforms
+    var platforms = [];
+    // Function to render the canvas
+    function rendercanvas(){
+        ctx.fillStyle = "#F0F8FF";
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        ctx.fillStyle = "#000000";
+        ctx.font = "30px Arial";
+        ctx.fillText(player.x, 10, 40);
+        ctx.fillText(player.y, 10, 80);
+        ctx.fillText(player.theta, 10, 120);
+    }
+    // Function to render the player
+    function renderplayer(){
+        ctx.save();
+        ctx.translate(player.x, ctx.canvas.height - player.y)
+        ctx.rotate(player.theta);
+        ctx.fillStyle = "#F08080";
+        ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+        ctx.restore();
+    }
+    // Function to create platforms
+    function createplat(){
+        for(i = 0; i < num; i++) {
+            platforms.push(
+                {
+                x: 300 + (30 * i),
+                y: 400 + (30 * i),
+                width: 110,
+                height: 15
+                }
+            );
+        }
+    }
+    // Function to render platforms
+    function renderplat(){
+        ctx.fillStyle = "#45597E";
+        platforms.forEach(item => ctx.fillRect(item.x, item.y, item.width, item.height));
+    
+    }
+    // This function will be called when a key on the keyboard is pressed
+    function keydown(e) {
+        // 37 is the code for the left arrow key
+        if(e.keyCode == 37) {
+            keys.left = true;
+        }
+        // 37 is the code for the up arrow key
+        if(e.keyCode == 38) {
+            keys.up = true;
+        }
+        // 39 is the code for the right arrow key
+        if(e.keyCode == 39) {
+            keys.right = true;
+        }
+        // 40 is the code for the right arrow key
+        if(e.keyCode == 40) {
+            keys.down = true;
+        }
+        // 118 is the code for the right arrow key
+        if(e.keyCode == 188) {
+            keys.comma = true;
+        }
+        // 190 is the code for the right arrow key
+        if(e.keyCode == 190) {
+            keys.period = true;
+        }
+    }
+    // This function is called when the pressed key is released
+    function keyup(e) {
+        if(e.keyCode == 37) {
+            keys.left = false;
+        }
+        if(e.keyCode == 38) {
+            keys.up = false;
+        }
+        if(e.keyCode == 39) {
+            keys.right = false;
+        }
+        if(e.keyCode == 40) {
+            keys.down = false;
+        }
+        if(e.keyCode == 188) {
+            keys.comma = false;
+        }
+        if(e.keyCode == 190) {
+            keys.period = false;
+        }
+    } 
+    function loop() {
+
+        player.x_v *= friction;
+        player.y_v *= friction;
+        player.omega *= friction;
+
+        player.jump = true;
+        // If the left key is pressed increase the relevant horizontal velocity
+        if(keys.left) {
+            player.x_v = -2.5;
+        }
+        if(keys.right) {
+            player.x_v = 2.5;
+        }
+        if(keys.up) {
+            player.y_v = 2.5;
+        }
+        if(keys.down) {
+            player.y_v = -2.5;
+        }
+        if(keys.comma) {
+            player.omega = -0.1;
+        };
+        if(keys.period) {
+            player.omega = 0.1;
+        };
+
+        player.y += player.y_v;
+        player.x += player.x_v;
+        player.theta += player.omega;
+        
+
+
+        // Rendering the canvas, the player and the platforms
+        rendercanvas();
+        renderplayer();
+        renderplat();
+        ctx.fillRect(10, 10, 10, 10);
+
+
+    }
+
+    window.onresize = function(){
+        ctx.canvas.height = innerHeight - 200;
+        ctx.canvas.width = innerWidth - 400;
+    }
+
+
+    canvas=document.getElementById("canvas");
+
+    ctx=canvas.getContext("2d");
+    // ctx.canvas.height = 600;
+    // ctx.canvas.width = 600;
+    ctx.canvas.height = innerHeight - 200;
+    ctx.canvas.width = innerWidth - 400;
+    // console.log(document.getElementById("focus").innerHeight);
+    // console.log(document.getElementById("focus").clientWidth);
+
+
+
+
+    createplat();
+    // Adding the event listeners
+    document.addEventListener("keydown",keydown);
+    document.addEventListener("keyup",keyup);
+    setInterval(loop,22);
+</script>
+</div>
+</body>
+
+
+
+<style>
+    .focusbox {
+        background:darkslategray;
+        width:80%;
+        height:80%;
+        border-radius:6px;
+        margin: 5% auto auto auto;
+        padding: 10px;
+        text-align:center;
+        box-shadow: 5px 5px 10px black;
+    }
+
+    .back {
+        background: black;
+        margin: auto;
+    }
+
+
+</style>
+
+
+</html>
