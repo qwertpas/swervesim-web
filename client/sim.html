@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Robot Sim</title>
+    <style>* {margin: 0% } canvas { background: #eee; width: 100%; height: 100%}</style>
+</head>
+<body>
+
+<canvas id="myCanvas"></canvas>
+
+<div class="hcenter">
+    <p id="time"></p>
+</div>
+
+<div class="hcenter">
+    <input type="button" id="mode1" value="Mode 1" onclick="mode1()">
+    <input type="button" id="mode2" value="Mode 2" onclick="mode2()">
+    <input type="button" id="mode3" value="Mode 3" onclick="mode3()">
+</div>
+
+<div class="hcenter">
+    <input type="button" id="reset" value="Reset" onclick="reset()">
+</div>
+
+<script>
+    var canvas = document.getElementById("myCanvas");
+    var ctx = canvas.getContext("2d");
+
+    ctx.canvas.width  = 1200;
+    ctx.canvas.height = 600;
+    ctx.translate(600, 300);
+
+
+    var keys = {
+        w: false,
+        a: false,
+        s: false,
+        d: false,
+        left: false,
+        up: false,
+        right: false,
+        down: false,
+        comma: false,
+        period: false,
+    };
+
+    var robot = {
+        width: 10,
+        height: 10,
+
+        x: 0,
+        y: 0,
+        ang: 0,
+
+    }
+
+    var startTime = new Date().getTime();
+    var elapsedTime = 0;
+
+    var paused = true;
+
+    setInterval(loop, 20);
+    document.addEventListener("keydown", keydown);
+    document.addEventListener("keyup", keyup);
+
+    function loop() {
+        if(!paused){
+            elapsedTime = (new Date().getTime() - startTime) / 1000;
+        }
+        document.getElementById("time").innerText = "Elasped Time: " + elapsedTime.toFixed(2);
+
+        if(keys.w) robot.y += -1;
+        if(keys.a) robot.x += -1;
+        if(keys.s) robot.y += +1;
+        if(keys.d) robot.x += +1;
+
+
+        draw();
+    }
+
+    function draw(){
+        ctx.clearRect(-canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#0095DD";
+
+        ctx.beginPath();
+        ctx.arc(0, 0, 50, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.stroke();
+
+
+
+
+        ctx.fillRect(robot.x - robot.width/2, robot.y - robot.height/2, robot.width, robot.height)
+
+
+        ctx.fillRect(robot.x - robot.width/2, robot.y - robot.height/2, robot.width, robot.height)
+    }
+
+
+
+
+    // This function will be called when a key on the keyboard is pressed
+    function keydown(e) {
+        paused = false;
+
+        if(e.keyCode == 87) keys.w = true;
+        if(e.keyCode == 65) keys.a = true;
+        if(e.keyCode == 83) keys.s = true;
+        if(e.keyCode == 68) keys.d = true;
+
+        if(e.keyCode == 37) keys.left = true;
+        if(e.keyCode == 38) keys.up = true;
+        if(e.keyCode == 39) keys.right = true;
+        if(e.keyCode == 40) keys.down = true;
+
+        if(e.keyCode == 188) keys.comma = true;
+        if(e.keyCode == 190) keys.period = true;
+    }
+    function keyup(e) {
+        if(e.keyCode == 87) keys.w = false;
+        if(e.keyCode == 65) keys.a = false;
+        if(e.keyCode == 83) keys.s = false;
+        if(e.keyCode == 68) keys.d = false;
+
+        if(e.keyCode == 37) keys.left = false;
+        if(e.keyCode == 38) keys.up = false;
+        if(e.keyCode == 39) keys.right = false;
+        if(e.keyCode == 40) keys.down = false;
+
+        if(e.keyCode == 188) keys.comma = false;
+        if(e.keyCode == 190) keys.period = false;
+
+        
+    }
+
+    function mode1(){
+        document.getElementById("mode1").className = "pressed";
+        document.getElementById("mode2").className = "unpressed";
+        document.getElementById("mode3").className = "unpressed";
+    }
+    function mode2(){
+        document.getElementById("mode1").className = "unpressed";
+        document.getElementById("mode2").className = "pressed";
+        document.getElementById("mode3").className = "unpressed";
+    }
+    function mode3(){
+        document.getElementById("mode1").className = "unpressed";
+        document.getElementById("mode2").className = "unpressed";
+        document.getElementById("mode3").className = "pressed";
+    }
+    function reset(){
+        elapsedTime = 0;
+        robot.x = 0;
+        robot.y = 0;
+        robot.ang = 0;
+        paused = true;
+    }
+</script>
+
+</body>
+</html>
+
+<style>
+    .hcenter{
+        text-align: center;
+        padding: 5px 5px;
+    }
+
+    .unpressed{
+        background-color: white;
+    }
+
+    .pressed{
+        background-color: aquamarine;
+    }
+</style>
