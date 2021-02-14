@@ -9,67 +9,130 @@
 
 <canvas id="myCanvas"></canvas>
 
-<div class="hcenter">
-    <p id="time"></p>
+<div class="vcenter"></div>
+
+<div class="row">
+
+    <div class="column">
+        <img width=90% height=auto id="controls" src="scr.png">
+    </div>
+
+    <div class="column">
+
+        <div class="vcenter">
+            <p id="time"></p>
+        </div>
+
+        <div class="vcenter">
+            <input type="button" id="reset" value="Reset (R)" onclick="reset()" class="unpressed">
+        </div>
+
+        <div class="vcenter">
+            <input type="button" id="mode1" value="Mode 1" onclick="changeMode(1)" class="pressed">
+            <input type="button" id="mode2" value="Mode 2" onclick="changeMode(2)" class="unpressed">
+            <input type="button" id="mode3" value="Mode 3" onclick="changeMode(3)" class="unpressed">
+            <input type="button" id="mode4" value="Mode 4" onclick="changeMode(4)" class="unpressed">
+            <!-- <input type="button" id="mode5" value="Mode 5" onclick="changeMode(5)" class="unpressed"> -->
+        </div>
+    </div>
+
+    <div class="column">
+        <img width=90% height=auto id="controls" src="scr.png">
+    </div>
+
 </div>
 
-<div class="hcenter">
-    <input type="button" id="reset" value="Reset (R)" onclick="reset()" class="unpressed">
-</div>
 
-<div class="hcenter">
-    <input type="button" id="mode1" value="Mode 1" onclick="mode1()" class="pressed">
-    <input type="button" id="mode2" value="Mode 2" onclick="mode2()" class="unpressed">
-    <input type="button" id="mode3" value="Mode 3" onclick="mode3()" class="unpressed">
-</div>
 
+<script src="http://mlweb.loria.fr/lalolib.js"></script>
+<script src="util.js"></script>
 
 
 <script>
-    var canvas = document.getElementById("myCanvas");
+    let canvas = document.getElementById("myCanvas");
     canvas.width  = 1200;
     canvas.height = 550;
-    var ctx = canvas.getContext("2d");
+    let ctx = canvas.getContext("2d");
     ctx.translate(canvas.width/2, canvas.height/2);
     ctx.transform(1, 0, 0, -1, 0, 0);
 
 
-    var keys = {
-        w: false,
-        a: false,
+    let keys = {
+        y: false,
+        u: false,
+        i: false,
+        o: false,
+        p: false,
+
+        h: false,
+        j: false,
+        k: false,
+        l: false,
+        sc: false, //semicolon
+
+        e: false,
         s: false,
         d: false,
-        left: false,
-        up: false,
-        right: false,
-        down: false,
-        comma: false,
-        period: false,
+        f: false,
     };
 
-    var robot = {
+    let robot = {
         width: 100,
         height: 125,
 
         x: -500,
-        y: -200,
+        y: -180,
         ang: 0,
-        wheel0ang: 0,
-        wheel1ang: 0,
-        wheel2ang: 0,
-        wheel3ang: 0,
+
+        wheelang: [Math.PI/2, Math.PI/2, Math.PI/2, Math.PI/2],
+        wheelvel: [0, 0, 0, 0]
+
     }
 
-    var moduleX = robot.width / 2 - 15;
-    var moduleY = robot.height / 2 - 15;
+    let targets = {
+        d: [0, 0, 0, 0],
+        t: [Math.PI/2, Math.PI/2, Math.PI/2, Math.PI/2],
+    }
 
-    var startTime = new Date().getTime();
-    var elapsedTime = 0;
 
-    var paused = true;
-    var mode = 1;
+    let moduleX = robot.width / 2 - 15;
+    let moduleY = robot.height / 2 - 15;
+
+    let A = array2mat([
+        [1, 0, -+moduleX],
+        [0, 1, ++moduleY],
+        [1, 0, -+moduleX],
+        [0, 1, +-moduleY],
+        [1, 0, --moduleX],
+        [0, 1, +-moduleY],
+        [1, 0, --moduleX],
+        [0, 1, ++moduleY],
+    ]);
+
+    let Af = array2mat([
+        [1, 0, -+moduleX],
+        [0, 1, ++moduleY],
+        [1, 0, -+moduleX],
+        [0, 1, +-moduleY],
+    ]);
+
+    let Ab = array2mat([
+        [1, 0, --moduleX],
+        [0, 1, +-moduleY],
+        [1, 0, --moduleX],
+        [0, 1, ++moduleY],
+    ]);
+
+    let startTime = new Date().getTime();
+    let elapsedTime = 0;
+
+    let paused = true;
+    let isDone = false;
+    let mode = 1;
 
     setInterval(loop, 20);
+    setInterval(checkHits, 200);
+    setInterval(addPeep, 1000);
 
     document.addEventListener("keydown", keydown);
     document.addEventListener("keyup", keyup);
@@ -79,152 +142,480 @@
 
         if(!paused){
             elapsedTime = (new Date().getTime() - startTime) / 1000;
-
-
             greyOtherButtons();
 
+            if(mode == 1){  //5DOF
+                if(keys.u) targets.t[0] += 0.2;
+                if(keys.j) targets.t[0] -= 0.2;
 
-            if(keys.w) robot.y += +1;
-            if(keys.a) robot.x += -1;
-            if(keys.s) robot.y += -1;
-            if(keys.d) robot.x += +1;
-            if(keys.left) robot.ang += +0.1;
-            if(keys.right) robot.ang += -0.1;            
+                if(keys.i) targets.t[1] += 0.2;
+                if(keys.k) targets.t[1] -= 0.2;
+
+                if(keys.o) targets.t[2] += 0.2;
+                if(keys.l) targets.t[2] -= 0.2;
+
+                if(keys.p) targets.t[3] += 0.2;
+                if(keys.sc) targets.t[3] -= 0.2;
+
+                let speed = 0;
+                if(keys.e) speed += 5;
+                if(keys.d) speed -= 5;
+
+                for(let i in [0,1,2,3]){
+                    targets.d[i] = speed;
+                }
+            }
+            if(mode == 2){  //4DOF
+                let vfx = vfy = vbx = vby = angvel = 0;
+
+                if(keys.e) vfy += 5;
+                if(keys.d) vfy -= 5;
+                if(keys.f) vfx += 5;
+                if(keys.s) vfx -= 5;
+
+                if(keys.l) vbx += 5;
+                if(keys.j) vbx -= 5;
+                if(keys.i) vby += 5;
+                if(keys.k) vby -= 5;
+
+                let fieldcentervelosf = rotate(vfx, vfy, -robot.ang);
+                vfx = fieldcentervelosf[0];
+                vfy = fieldcentervelosf[1];
+
+                let fieldcentervelosb = rotate(vbx, vby, -robot.ang);
+                vbx = fieldcentervelosb[0];
+                vby = fieldcentervelosb[1];
+
+                angvel = 0.1 * (vbx - vfx) / moduleY;
+
+                //FRONT 
+                if(Math.abs(vfx)==0 && Math.abs(vfy)==0 && Math.abs(angvel)==0){
+                    for(let i of [0,1]){
+                        targets.d[i] = 0;
+                    }
+                }else{
 
 
-            
-        }else{
 
-            if(keys.w || keys.a || keys.s || keys.d || keys.left || keys.right){
+                    let robotSpeeds = array2mat([[vfx], [vfy], [angvel]]);
+                    let wheelSpeeds = mul(Af, robotSpeeds);
+
+
+                    for(let i of [0,1]){
+                        let wheelvelfx = wheelSpeeds[2*i];
+                        let wheelvelfy = wheelSpeeds[2*i + 1];
+                        targets.d[i] = Math.hypot(wheelvelfx, wheelvelfy);
+
+                        let targetAngle = Math.atan2(wheelvelfy, wheelvelfx);
+                        let diffNormalized = normalizeAngle(robot.wheelang[i] - targetAngle, Math.PI);
+                        targets.t[i] = robot.wheelang[i] - diffNormalized;
+                    }
+                }
+
+                //BACK
+                if(Math.abs(vbx)==0 && Math.abs(vby)==0 && Math.abs(angvel)==0){
+                    for(let i of [2,3]){
+                        targets.d[i] = 0;
+                    }
+                }else{
+                    let robotSpeeds = array2mat([[vbx], [vby], [angvel]]);
+                    let wheelSpeeds = mul(Ab, robotSpeeds);
+
+                    for(let i of [2,3]){
+                        let wheelvelx_mode2 = wheelSpeeds[2*(i-2)];
+                        let wheelvely_mode2 = wheelSpeeds[2*(i-2) + 1];
+                        targets.d[i] = Math.hypot(wheelvelx_mode2, wheelvely_mode2);
+
+                        let targetAngle = Math.atan2(wheelvely_mode2, wheelvelx_mode2);
+                        let diffNormalized = normalizeAngle(robot.wheelang[i] - targetAngle, Math.PI);
+                        targets.t[i] = robot.wheelang[i] - diffNormalized;
+                    }
+                }
+
+            }
+            if(mode == 3){  //3DOF
+                let vx = vy = angvel = 0;
+
+                if(keys.l) vx += 5;
+                if(keys.j) vx -= 5;
+
+                if(keys.i) vy += 5;
+                if(keys.k) vy -= 5;
+
+                if(keys.s) angvel += 0.05;
+                if(keys.f) angvel -= 0.05;
+
+                if(Math.abs(vx)==0 && Math.abs(vy)==0 && Math.abs(angvel)==0){
+                    for(let i in [0,1,2,3]){
+                        targets.d[i] = 0;
+                    }
+                }else{
+                    let fieldcentervelos = rotate(vx, vy, -robot.ang);
+                    vx = fieldcentervelos[0];
+                    vy = fieldcentervelos[1];
+
+                    let robotSpeeds = array2mat([[vx], [vy], [angvel]]);
+                    let wheelSpeeds = mul(A, robotSpeeds);
+
+                    for(let i in [0,1,2,3]){
+                        let wheelvelx_mode3 = wheelSpeeds[2*i];
+                        let wheelvely_mode3 = wheelSpeeds[2*i + 1];
+                        targets.d[i] = Math.hypot(wheelvelx_mode3, wheelvely_mode3);
+
+                        let targetAngle = Math.atan2(wheelvely_mode3, wheelvelx_mode3);
+                        let diffNormalized = normalizeAngle(robot.wheelang[i] - targetAngle, Math.PI);
+                        targets.t[i] = robot.wheelang[i] - diffNormalized;
+                    }
+                }
+            }
+            if(mode == 4){  //2DOF
+                let vx = vy = angvel = 0;
+                if(keys.i) vy += 5;
+                if(keys.k) vy -= 5;
+
+                if(keys.s) angvel += 0.05;
+                if(keys.f) angvel -= 0.05;
+
+                if(Math.abs(vx)==0 && Math.abs(vy)==0 && Math.abs(angvel)==0){
+                    for(let i in [0,1,2,3]){
+                        targets.d[i] = 0;
+                    }
+                }else{
+
+                    let robotSpeeds = array2mat([[vx], [vy], [angvel]]);
+                    let wheelSpeeds = mul(A, robotSpeeds);
+
+                    for(let i in [0,1,2,3]){
+                        let wheelvelx_mode2 = wheelSpeeds[2*i];
+                        let wheelvely_mode2 = wheelSpeeds[2*i + 1];
+                        targets.d[i] = Math.hypot(wheelvelx_mode2, wheelvely_mode2);
+
+                        let targetAngle = Math.atan2(wheelvely_mode2, wheelvelx_mode2);
+                        let diffNormalized = normalizeAngle(robot.wheelang[i] - targetAngle, Math.PI);
+                        targets.t[i] = robot.wheelang[i] - diffNormalized;
+                    }
+                }
+            }
+
+            let wheelvels = [];
+            for(let i of [0,1,2,3]){
+                robot.wheelang[i] += 0.4 * (targets.t[i] - robot.wheelang[i]);
+                robot.wheelvel[i] += 0.2 * (targets.d[i] - robot.wheelvel[i]);
+
+                if(Math.abs(robot.wheelang[i]) < 0.01) robot.wheelang[i] = 0;
+                if(Math.abs(robot.wheelvel[i]) < 0.5) robot.wheelvel[i] = 0;
+
+                let wheelvelx = robot.wheelvel[i] * Math.cos(robot.wheelang[i]);
+                let wheelvely = robot.wheelvel[i] * Math.sin(robot.wheelang[i]);
+
+                wheelvels = wheelvels.concat(wheelvelx, wheelvely);
+            }
+
+            let robotvels = solve(A, wheelvels);
+            let globalRobotVels = rotate(robotvels[0], robotvels[1], robot.ang);
+
+            robot.x += globalRobotVels[0];
+            robot.y += globalRobotVels[1];
+            robot.ang += robotvels[2];
+
+            updatePeeps();
+        }else if(!isDone){
+
+            if(
+                keys.u || keys.i || keys.o || keys.p || keys.j || keys.k || 
+                keys.k || keys.l || keys.sc || keys.e || keys.s || keys.d || keys.f
+            ){
                 paused = false;
                 startTime = new Date().getTime();
             }else{
                 ungreyOtherButtons();
             }
         }
-        document.getElementById("time").innerText = "Elasped Time: " + elapsedTime.toFixed(2);
+
+        if(isDone){
+            document.getElementById("time").innerText = "Success! Done in: " + elapsedTime.toFixed(2) + 's';
+        }else{
+            document.getElementById("time").innerText = "Elasped Time: " + elapsedTime.toFixed(2) + 's';
+        }
         draw();
     }
 
-    function draw(){
-        ctx.clearRect(-canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
 
-        ctx.save();
+    let walls = [
+        //anglerfish
+        cornerRect(-400, 80, -380, -40),
+        cornerRect(-400, -40, -320, -60),
+        cornerRect(-340, -60, -320, -canvas.height/2),
+        cornerRect(-320, -200, 140, -canvas.height/2),
+        cornerRect(40, -140, 140, -200),
 
-        ctx.translate(robot.x, robot.y);
-        ctx.rotate(robot.ang)
-        ctx.fillStyle = "rgb(51, 102, 255)";
-        ctx.fillRect(-robot.width/2, -robot.height/2, robot.width, robot.height)
+        //island
+        cornerRect(-140, 140, -100, 40),
+        cornerRect(-100, 140, 0, 70),
 
-        ctx.fillStyle = "rgb(50, 50, 50)";
-        drawModule(+moduleX, +moduleY, Math.PI);
-        drawModule(-moduleX, +moduleY, Math.PI);
-        drawModule(-moduleX, -moduleY, Math.PI);
-        drawModule(+moduleX, -moduleY, Math.PI);
+        //triangle corner
+        new Polygon([new Point(canvas.width/2, canvas.height/2), new Point(100, canvas.height/2), new Point(canvas.width/2, 0)]),
+        cornerRect(500, 200, 600, -50),
+        cornerRect(470, -20, 500, -50),
+    ]
 
-        ctx.restore();
+    let people = [
+    ]
 
+    let border = [
+        centerRect(0, 0, 0, canvas.width, canvas.height),
+    ]
+
+    function addPeep(){
+        if(!paused){
+            if(Math.random() < 0.2){
+                people.push(centerRect(40, -200, 0, 40, 40));
+            }
+            if(Math.random() < 0.1){
+                people.push(centerRect(530, 10, 0, 40, 40));
+            }
+        }
     }
 
-    function drawModule(x, y, ang){
-        ctx.beginPath();
-        ctx.arc(x, y, 10, 0, 2 * Math.PI);
+    let peepTarget = {
+        x: -70,
+        y: 120
+    }
+    function updatePeeps(){
+        if(!paused){
+            for(let i=0; i < people.length; i++){
+                let center = people[i].center();
+                let dx = 0.05 * (peepTarget.x - center.x);
+                let dy = 0.01 * (peepTarget.y - center.y);
+
+                let velos = normalizeValue(2, dx, dy);
+
+                people[i].move(velos[0], velos[1]);
+                // people[i].move(0, 2);
+
+                if(center.x < peepTarget.x + 30 && center.y > peepTarget.y - 30){
+                    people.splice(i, 1);
+                }
+            }
+        }
+    }
+    
+    function checkHits(){
+        if(!paused){
+            let robotHitbox = centerRect(robot.x, robot.y, robot.ang, robot.width, robot.height);
+            if(polyPolys(robotHitbox, walls.concat(people, border))){
+                reset();
+            }
+
+            if(Math.abs(robot.x - 520) < 10 && Math.abs(robot.y - -180) < 10 && Math.abs(Math.abs(normalizeAngle(robot.ang, Math.PI) / Math.PI) - 1) < 0.5){
+                isDone = true;
+                paused = true;
+            }
+        }
+    }
+
+
+    function draw(){
+        ctx.clearRect(-canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
+        ctx.save();
+
+        ctx.scale(1, -1);
+        ctx.font = '25px Monaco';
+        ctx.fillStyle = "rgb(0, 0, 0)";
+        ctx.fillText("Start", -535, 105);
+        ctx.scale(1, -1);
+
+        ctx.fillStyle = "#E08955";
+        for(let person of people){
+            drawPoly(person);
+        }
+        ctx.fillStyle = "#727e8a";
+        for(let wall of walls){
+            drawPoly(wall);
+        }
+
+        ctx.scale(1, -1);
+        ctx.font = '20px serif';
+        ctx.fillStyle = "rgb(0, 0, 0)";
+        ctx.fillText(Math.round(mousePos.x) + ", " + Math.round(mousePos.y), 500, -220);
+        ctx.scale(1, -1);
+
+        //target
+        ctx.translate(520, -180);
+        ctx.rotate(Math.PI);
+        ctx.fillStyle = "rgb(140, 200, 240)";
+        ctx.fillRect(-robot.width/2, -robot.height/2, robot.width, robot.height);
+        ctx.fillStyle = "rgb(255, 255, 255)";
+        ctx.fillRect(-5, robot.height/2 - 25, 10, 20);
+
+        ctx.scale(-1, 1);
+        ctx.font = '25px Monaco';
+        ctx.fillStyle = "rgb(0, 0, 0)";
+        ctx.fillText("Target", -45, 0);
+        ctx.scale(-1, 1);
+        ctx.rotate(-Math.PI);
+        ctx.translate(-520, 180);
+
+        //real robot
+        ctx.translate(robot.x, robot.y);
+        ctx.rotate(robot.ang);
+        ctx.fillStyle = "rgb(51, 102, 255)";
+        ctx.fillRect(-robot.width/2, -robot.height/2, robot.width, robot.height);
+        ctx.fillStyle = "rgb(200, 200, 200)";
+        ctx.fillRect(-5, robot.height/2 - 25, 10, 20);
+
+        drawModule(+moduleX, +moduleY, robot.wheelang[0], robot.wheelvel[0]);
+        drawModule(-moduleX, +moduleY, robot.wheelang[1], robot.wheelvel[1]);
+        drawModule(-moduleX, -moduleY, robot.wheelang[2], robot.wheelvel[2]);
+        drawModule(+moduleX, -moduleY, robot.wheelang[3], robot.wheelvel[3]);
+        
+        ctx.restore();
+    }
+
+    let mousePos = 0;
+    canvas.addEventListener('mousemove', function(evt) {
+        mousePos = getMousePos(canvas, evt);
+    }, false);
+    function  getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect(), // abs. size of element
+            scaleX = canvas.width / rect.width,    // relationship bitmap vs. element for X
+            scaleY = canvas.height / rect.height;  // relationship bitmap vs. element for Y
+
+        return {
+            x: (evt.clientX - rect.left) * scaleX - canvas.width/2,   // scale mouse coordinates after they have
+            y: -(evt.clientY - rect.top) * scaleY + canvas.height/2     // been adjusted to be relative to element
+        }
+    }
+
+    function drawPoly(poly){
+        ctx.beginPath()
+        ctx.moveTo(poly.pts[0].x, poly.pts[0].y);
+        for(let pt of poly.pts){
+            ctx.lineTo(pt.x, pt.y);
+        }
         ctx.fill();
+    }
+
+    function drawModule(x, y, ang, vel){
+        ctx.translate(x, y);
+        ctx.fillStyle = "rgb(50, 50, 50)";
+        ctx.beginPath();
+        ctx.arc(0, 0, 10, 0, 2 * Math.PI);
+
+        ctx.fill();
+
+        ctx.rotate(ang)
+        if(vel >= 0){
+            ctx.fillStyle = "rgb(255, 0, 0)";
+            ctx.fillRect(0, -3, 10 + vel * 6, 4)
+        }else{
+            ctx.fillStyle = "rgb(255, 255, 0)";
+            ctx.fillRect(0, -3, -10 + vel * 6, 4)
+        }
+        ctx.rotate(-ang)
+
+        ctx.translate(-x, -y);
     }
 
     function reset(){
         document.getElementById("reset").className = "pressed";
         elapsedTime = 0;
-        robot.x = -500;
-        robot.y = -200;
-        robot.ang = 0;
-        wheel0ang = 0,
-        wheel1ang = 0,
-        wheel2ang = 0,
-        wheel3ang = 0,
+        isDone = false;
+
+        robot = {
+            width: 100,
+            height: 125,
+
+            x: -500,
+            y: -180,
+            ang: 0,
+
+            wheelang: [Math.PI/2, Math.PI/2, Math.PI/2, Math.PI/2],
+            wheelvel: [0, 0, 0, 0]
+        }   
+
+        targets = {
+            d: [0, 0, 0, 0],
+            t: [Math.PI/2, Math.PI/2, Math.PI/2, Math.PI/2],
+        }
+
         paused = true;
     }
-
-
-
-
-
 
     // This function will be called when a key on the keyboard is pressed
     function keydown(e) {
 
-        if(e.keyCode == 87) keys.w = true;
-        if(e.keyCode == 65) keys.a = true;
+        if(e.keyCode == 89) keys.y = true;
+        if(e.keyCode == 85) keys.u = true;
+        if(e.keyCode == 73) keys.i = true;
+        if(e.keyCode == 79) keys.o = true;
+        if(e.keyCode == 80) keys.p = true;
+
+        if(e.keyCode == 72) keys.h = true;
+        if(e.keyCode == 74) keys.j = true;
+        if(e.keyCode == 75) keys.k = true;
+        if(e.keyCode == 76) keys.l = true;
+        if(e.keyCode == 186) keys.sc = true;
+
+        if(e.keyCode == 69) keys.e = true;
         if(e.keyCode == 83) keys.s = true;
         if(e.keyCode == 68) keys.d = true;
+        if(e.keyCode == 70) keys.f = true;
 
-        if(e.keyCode == 37) keys.left = true;
-        if(e.keyCode == 38) keys.up = true;
-        if(e.keyCode == 39) keys.right = true;
-        if(e.keyCode == 40) keys.down = true;
-
-        if(e.keyCode == 188) keys.comma = true;
-        if(e.keyCode == 190) keys.period = true;
-
-        if(e.keyCode == 82){
+        
+        if(e.keyCode == 82){ // R
             reset();
         }
     }
+
     function keyup(e) {
-        if(e.keyCode == 87) keys.w = false;
-        if(e.keyCode == 65) keys.a = false;
+        if(e.keyCode == 89) keys.y = false;
+        if(e.keyCode == 85) keys.u = false;
+        if(e.keyCode == 73) keys.i = false;
+        if(e.keyCode == 79) keys.o = false;
+        if(e.keyCode == 80) keys.p = false;
+
+        if(e.keyCode == 72) keys.h = false;
+        if(e.keyCode == 74) keys.j = false;
+        if(e.keyCode == 75) keys.k = false;
+        if(e.keyCode == 76) keys.l = false;
+        if(e.keyCode == 186) keys.sc = false;
+
+        if(e.keyCode == 69) keys.e = false;
         if(e.keyCode == 83) keys.s = false;
         if(e.keyCode == 68) keys.d = false;
+        if(e.keyCode == 70) keys.f = false;
 
-        if(e.keyCode == 37) keys.left = false;
-        if(e.keyCode == 38) keys.up = false;
-        if(e.keyCode == 39) keys.right = false;
-        if(e.keyCode == 40) keys.down = false;
-
-        if(e.keyCode == 188) keys.comma = false;
-        if(e.keyCode == 190) keys.period = false;
-
-        if(e.keyCode == 49) mode1();
-        if(e.keyCode == 50) mode2();
-        if(e.keyCode == 51) mode3();
+        if(e.keyCode == 49) changeMode(1);
+        if(e.keyCode == 50) changeMode(2);
+        if(e.keyCode == 51) changeMode(3);
+        if(e.keyCode == 52) changeMode(4);
+        if(e.keyCode == 53) changeMode(5);
+        
     }
 
-    function mode1(){
+    function changeMode(num){
         if(paused){
-            document.getElementById("mode1").className = "pressed";
-            document.getElementById("mode2").className = "unpressed";
-            document.getElementById("mode3").className = "unpressed";
-            mode = 1;
+            for(let i of [1,2,3,4]){
+                document.getElementById("mode" + i).className = "unpressed";
+            }
+            document.getElementById("mode" + mode).className = "pressed";
+            mode = num;
         }
     }
-    function mode2(){
-        if(paused){
-            document.getElementById("mode1").className = "unpressed";
-            document.getElementById("mode2").className = "pressed";
-            document.getElementById("mode3").className = "unpressed";
-            mode = 2;
-        }
-    }
-    function mode3(){
-        if(paused){
-            document.getElementById("mode1").className = "unpressed";
-            document.getElementById("mode2").className = "unpressed";
-            document.getElementById("mode3").className = "pressed";
-            mode = 3;
-        }
-    }
+
     function greyOtherButtons(){
-        document.getElementById("mode1").className = "greyed";
-        document.getElementById("mode2").className = "greyed";
-        document.getElementById("mode3").className = "greyed";
+        for(let i of [1,2,3,4]){
+            document.getElementById("mode" + i).className = "greyed";
+        }
 
         document.getElementById("mode" + mode).className = "pressed";
         document.getElementById("reset").className = "unpressed";
     }
     function ungreyOtherButtons(){
-        document.getElementById("mode1").className = "unpressed";
-        document.getElementById("mode2").className = "unpressed";
-        document.getElementById("mode3").className = "unpressed";
+        for(let i of [1,2,3,4]){
+            document.getElementById("mode" + i).className = "unpressed";
+        }
 
         document.getElementById("mode" + mode).className = "pressed";
         document.getElementById("reset").className = "unpressed";
@@ -237,12 +628,26 @@
 </html>
 
 <style>
-    .hcenter{
+
+    .vcenter{
         text-align: center;
-        padding: 5px 5px;
+        padding: 5px 5px 5px 5px;
         color:whitesmoke;
         font-size: 20px;
         font-family: Monaco, sans-serif;
+    }
+
+    .column {
+        text-align: center;
+        float: left;
+        width: 33.33%;
+        padding: 0px;
+    }
+
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
     }
 
     .unpressed{
