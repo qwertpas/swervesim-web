@@ -13,11 +13,11 @@
 
 <div class="row">
 
-    <div class="column">
-        <img width=90% height=auto id="controls" src="scr.png">
+    <div class="columnWee">
+        <img width=90% height=auto id="imgL" src="1L.png">
     </div>
 
-    <div class="column">
+    <div class="columnBig">
 
         <div class="vcenter">
             <p id="time"></p>
@@ -32,15 +32,75 @@
             <input type="button" id="mode2" value="Mode 2" onclick="changeMode(2)" class="unpressed">
             <input type="button" id="mode3" value="Mode 3" onclick="changeMode(3)" class="unpressed">
             <input type="button" id="mode4" value="Mode 4" onclick="changeMode(4)" class="unpressed">
-            <!-- <input type="button" id="mode5" value="Mode 5" onclick="changeMode(5)" class="unpressed"> -->
         </div>
     </div>
 
-    <div class="column">
-        <img width=90% height=auto id="controls" src="scr.png">
+    <div class="columnWee">
+        <img width=90% height=auto id="imgR" src="1R.png">
     </div>
 
 </div>
+
+<style>
+
+    .vcenter{
+        text-align: center;
+        padding: 5px 5px 5px 5px;
+        color:whitesmoke;
+        font-size: 20px;
+        font-family: Monaco, sans-serif;
+    }
+
+    .columnBig {
+        text-align: center;
+        float: left;
+        width: 50%;
+        padding: 0px;
+    }
+
+    .columnWee {
+        text-align: center;
+        float: left;
+        width: 25%;
+        padding: 0px;
+    }
+
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    .unpressed{
+        padding: 10px 20px;
+        background-color: rgb(101, 114, 133);
+        border: none;
+        color: whitesmoke;
+        cursor: pointer;
+        font-size: 15px;
+        font-family: Monaco, sans-serif;
+
+    }
+
+    .pressed{
+        padding: 10px 20px;
+        background-color: rgb(113, 224, 187);
+        border: none;
+        font-size: 15px;
+        font-family: Monaco, sans-serif;
+
+    }
+
+    .greyed{
+        padding: 10px 20px;
+        background-color: rgb(172, 172, 172);
+        border: none;
+        font-size: 15px;
+        font-family: Monaco, sans-serif;
+    }
+
+
+</style>
 
 
 
@@ -168,15 +228,15 @@
             if(mode == 2){  //4DOF
                 let vfx = vfy = vbx = vby = angvel = 0;
 
-                if(keys.e) vfy += 5;
-                if(keys.d) vfy -= 5;
-                if(keys.f) vfx += 5;
-                if(keys.s) vfx -= 5;
+                if(keys.e) vby += 5;
+                if(keys.d) vby -= 5;
+                if(keys.f) vbx += 5;
+                if(keys.s) vbx -= 5;
 
-                if(keys.l) vbx += 5;
-                if(keys.j) vbx -= 5;
-                if(keys.i) vby += 5;
-                if(keys.k) vby -= 5;
+                if(keys.l) vfx += 5;
+                if(keys.j) vfx -= 5;
+                if(keys.i) vfy += 5;
+                if(keys.k) vfy -= 5;
 
                 let fieldcentervelosf = rotate(vfx, vfy, -robot.ang);
                 vfx = fieldcentervelosf[0];
@@ -204,7 +264,7 @@
                     for(let i of [0,1]){
                         let wheelvelfx = wheelSpeeds[2*i];
                         let wheelvelfy = wheelSpeeds[2*i + 1];
-                        targets.d[i] = Math.hypot(wheelvelfx, wheelvelfy);
+                        targets.d[i] = limit(Math.hypot(wheelvelfx, wheelvelfy), 5);
 
                         let targetAngle = Math.atan2(wheelvelfy, wheelvelfx);
                         let diffNormalized = normalizeAngle(robot.wheelang[i] - targetAngle, Math.PI);
@@ -224,7 +284,7 @@
                     for(let i of [2,3]){
                         let wheelvelx_mode2 = wheelSpeeds[2*(i-2)];
                         let wheelvely_mode2 = wheelSpeeds[2*(i-2) + 1];
-                        targets.d[i] = Math.hypot(wheelvelx_mode2, wheelvely_mode2);
+                        targets.d[i] = limit(Math.hypot(wheelvelx_mode2, wheelvely_mode2), 5);
 
                         let targetAngle = Math.atan2(wheelvely_mode2, wheelvelx_mode2);
                         let diffNormalized = normalizeAngle(robot.wheelang[i] - targetAngle, Math.PI);
@@ -260,7 +320,7 @@
                     for(let i in [0,1,2,3]){
                         let wheelvelx_mode3 = wheelSpeeds[2*i];
                         let wheelvely_mode3 = wheelSpeeds[2*i + 1];
-                        targets.d[i] = Math.hypot(wheelvelx_mode3, wheelvely_mode3);
+                        targets.d[i] = limit(Math.hypot(wheelvelx_mode3, wheelvely_mode3), 5);
 
                         let targetAngle = Math.atan2(wheelvely_mode3, wheelvelx_mode3);
                         let diffNormalized = normalizeAngle(robot.wheelang[i] - targetAngle, Math.PI);
@@ -407,7 +467,7 @@
                 reset();
             }
 
-            if(Math.abs(robot.x - 520) < 10 && Math.abs(robot.y - -180) < 10 && Math.abs(Math.abs(normalizeAngle(robot.ang, Math.PI) / Math.PI) - 1) < 0.5){
+            if(Math.abs(robot.x - 520) < 20 && Math.abs(robot.y - -180) < 20 && Math.abs(Math.abs(normalizeAngle(robot.ang, Math.PI) / Math.PI) - 1) < 0.2){
                 isDone = true;
                 paused = true;
             }
@@ -437,7 +497,7 @@
         ctx.scale(1, -1);
         ctx.font = '20px serif';
         ctx.fillStyle = "rgb(0, 0, 0)";
-        ctx.fillText(Math.round(mousePos.x) + ", " + Math.round(mousePos.y), 500, -220);
+        // ctx.fillText(Math.round(mousePos.x) + ", " + Math.round(mousePos.y), 500, -220);
         ctx.scale(1, -1);
 
         //target
@@ -590,7 +650,6 @@
         if(e.keyCode == 50) changeMode(2);
         if(e.keyCode == 51) changeMode(3);
         if(e.keyCode == 52) changeMode(4);
-        if(e.keyCode == 53) changeMode(5);
         
     }
 
@@ -600,7 +659,11 @@
                 document.getElementById("mode" + i).className = "unpressed";
             }
             document.getElementById("mode" + mode).className = "pressed";
+
             mode = num;
+
+            document.getElementById("imgL").src = mode + "L.png";
+            document.getElementById("imgR").src = mode + "R.png";
         }
     }
 
@@ -627,56 +690,3 @@
 </body>
 </html>
 
-<style>
-
-    .vcenter{
-        text-align: center;
-        padding: 5px 5px 5px 5px;
-        color:whitesmoke;
-        font-size: 20px;
-        font-family: Monaco, sans-serif;
-    }
-
-    .column {
-        text-align: center;
-        float: left;
-        width: 33.33%;
-        padding: 0px;
-    }
-
-    .row:after {
-        content: "";
-        display: table;
-        clear: both;
-    }
-
-    .unpressed{
-        padding: 10px 20px;
-        background-color: rgb(101, 114, 133);
-        border: none;
-        color: whitesmoke;
-        cursor: pointer;
-        font-size: 15px;
-        font-family: Monaco, sans-serif;
-
-    }
-
-    .pressed{
-        padding: 10px 20px;
-        background-color: rgb(113, 224, 187);
-        border: none;
-        font-size: 15px;
-        font-family: Monaco, sans-serif;
-
-    }
-
-    .greyed{
-        padding: 10px 20px;
-        background-color: rgb(172, 172, 172);
-        border: none;
-        font-size: 15px;
-        font-family: Monaco, sans-serif;
-    }
-
-
-</style>

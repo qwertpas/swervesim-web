@@ -20,6 +20,14 @@ function normalizeAngle(angle, range){
     return angle;
 }
 
+function limit(value, max){
+    if(Math.abs(value) > max){
+        return Math.sign(value) * max;
+    }else{
+        return value;
+    }
+}
+
 function normalizeValue(scale, ...values){
     let max = 0
     for(let value of values){
