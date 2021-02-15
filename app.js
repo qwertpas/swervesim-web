@@ -3,6 +3,9 @@ var app = express();
  
 var server = require('http').createServer(app);
 
+var path = require('path');
+
+
 var lalolib = require('./client/lalolib.js');
 var util = require('./client/util.js');
 
