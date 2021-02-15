@@ -6,6 +6,9 @@ var server = require('http').createServer(app);
 var lalolib = require('./client/lalolib.js');
 var util = require('./client/util.js');
 
+app.use('/', lalolib);
+app.use('/', util);
+
 app.get('/', function(req, res) {
     // res.sendFile(__dirname + '/client/1L.png');
     // res.sendFile(__dirname + '/client/2L.png');
