@@ -9,10 +9,10 @@ var path = require('path');
 var lalolib = require('./client/lalolib.js');
 var util = require('./client/util.js');
 
-app.use(express.static(path.join(__dirname, 'client')));
+app.use(express.static('client'));
 
-app.use('/', lalolib);
-app.use('/', util);
+// app.use('/', lalolib);
+// app.use('/', util);
 
 app.get('/', function(req, res) {
     // res.sendFile(__dirname + '/client/1L.png');
