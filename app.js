@@ -3,8 +3,8 @@ var app = express();
  
 var server = require('http').createServer(app);
 
-var lalolib = require('lalolib.js');
-var util = require('util.js');
+var lalolib = require('./lalolib.js');
+var util = require('./util.js');
 
 app.get('/', function(req, res) {
     // res.sendFile(__dirname + '/client/1L.png');
