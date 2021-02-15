@@ -6,6 +6,8 @@ var server = require('http').createServer(app);
 var lalolib = require('./client/lalolib.js');
 var util = require('./client/util.js');
 
+app.use(express.static(path.join(__dirname, 'client')));
+
 app.use('/', lalolib);
 app.use('/', util);
 
