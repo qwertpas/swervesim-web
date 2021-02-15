@@ -17,8 +17,6 @@ app.get('/', function(req, res) {
     // res.sendFile(__dirname + '/client/3R.png');
     // res.sendFile(__dirname + '/client/4R.png');
 
-    // res.sendFile(__dirname + '/client/lalolib.js');
-    // res.sendFile(__dirname + '/client/util.js');
     res.sendFile(__dirname + '/client/sim.html');
 });
 
